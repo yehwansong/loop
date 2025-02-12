@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Synced Video</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: black;
+        }
+        video {
+            width: 80vw;
+            height: auto;
+            background: #222;
+        }
+    </style>
+</head>
+<body>
+
+    <video id="syncedVideo" src="screen2.mp4" muted loop playsinline></video>
+
+    <script>
+        async function getAccurateTime() {
+            try {
+                const response = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC');
+                const data = await response.json();
+                return new Date(data.utc_datetime);
+            } catch (error) {
+                return new Date(); // Fallback to local UTC time if API fails
+            }
+        }
+
+        async function syncVideo() {
+            const video = document.getElementById("syncedVideo");
+            
+            video.muted = true; // Ensure autoplay works
+            video.loop = true;
+
+            let now = await getAccurateTime();
+            let seconds = now.getUTCSeconds();
+            let remainder = seconds % 24;
+            let waitTime = remainder === 0 ? 0 : (24 - remainder) * 1000;
+
+            setTimeout(() => {
+                video.currentTime = 0;
+                video.play();
+                setInterval(() => {
+                    video.currentTime = 0; // Force resync every 24 sec
+                }, 24000);
+            }, waitTime);
+        }
+
+        document.addEventListener("DOMContentLoaded", syncVideo);
+    </script>
+
+</body>
+</html>
