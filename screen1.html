@@ -28,8 +28,7 @@
             transform: translate(-50%, -50%) rotate(180deg);
             width: 100vw;
             height: 100vh;
-            object-fit: cover;
-            display: none; /* Initially hidden until user clicks */
+            object-fit: cover; /* Ensures cropping while maintaining aspect ratio */
         }
 
         #playButton {
@@ -65,28 +64,22 @@
             const playButton = document.getElementById("playButton");
 
             playButton.addEventListener("click", async () => {
-                playButton.style.display = "none"; // Hide button after click
-                video.style.display = "block"; // Show video
-                
+                video.muted = false; // Unmute if needed
+                video.play();
+                playButton.style.display = "none"; // Hide button after playing
+
                 let now = await getAccurateTime();
                 let seconds = now.getUTCSeconds();
-                let remainder = seconds % 24; // Calculate offset
-                
-                // Sync video start time
-                video.currentTime = remainder;
-                video.play();
+                let remainder = seconds % 24;
+                let waitTime = remainder === 0 ? 0 : (24 - remainder) * 1000;
 
-                // Ensure video stays globally synced every loop
-                setInterval(async () => {
-                    let nowSync = await getAccurateTime();
-                    let newSeconds = nowSync.getUTCSeconds();
-                    let newRemainder = newSeconds % 24;
-
-                    // Correct playback position if drifted
-                    if (Math.abs(video.currentTime - newRemainder) > 0.5) {
-                        video.currentTime = newRemainder;
-                    }
-                }, 5000); // Check and correct sync every 5 seconds
+                setTimeout(() => {
+                    video.currentTime = 0;
+                    video.play();
+                    setInterval(() => {
+                        video.currentTime = 0; // Force resync every 24 sec
+                    }, 24000);
+                }, waitTime);
             });
         }
 
